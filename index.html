@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Habit Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiSGFiaXQgVHJhY2tlciIsInNob3J0X25hbWUiOiJIYWJpdHMiLCJzdGFydF91cmwiOiIuLyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmOWZhZmIiLCJ0aGVtZV9jb2xvciI6IiMyNTYzZWIiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M00zVXViM0puTHpJd01EQXZjM1puSWlCMmFXVjNRbTk0UFNJd0lEQWdNalEwSURJME5DSWdabWxzYkQwaVB6Z3dPREE0TUNJZ2MzUnliMnRsUFNJalpEQmpaRGRtSWlCNWJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M00zVXViM0puTHpJd01EQXZjM1puSWc0S1BHTnBjbU5zWlNCamVEMGlNVEl5SWlCamVUMGlNVEl5SWlCeVBTSTNNQ0lnWm1sc2JEMGlJekkxTmpObFlpSStQQzlqYVhKamJHVStEUW9nSUR4amFYSmpiR1VnWTNnOUlqRXlNaUlnWTNrOUlqTTJJaUJ5UFNJeU5pSWdabWxzYkQwaVl6VXdObVV4SWo0OEwyTnBjbU5zWlQ0TkNpQWdQR05wY21Oc1pTQmplRDBpTVRJeUlpQmplVDBpTWpBd0lpQnlQU0l5TmlJZ1ptbHNiRDBpSTNkM1pEWnVJajQ4TDJOCGNSV05zWlQ0TkNqd3ZjM1puUGc9PSIsInNpemVzIjoiMjU2eDI1NiIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
+    <style>
+        /* PWA and mobile optimizations */
+        body { 
+            -webkit-user-select: none; 
+            -webkit-touch-callout: none; 
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior: contain;
+        }
+        
+        /* Ensure proper mobile viewport */
+        @viewport { width: device-width; }
+        
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div class="loading"></div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { Check, Calendar, TrendingUp, Target, BarChart3, AlertCircle } = lucide;
+
+        const HabitTracker = () => {
+            const habits = [
+                { id: 'breakfast', name: 'Breakfast (30g protein)', category: 'nutrition', target: 'daily' },
+                { id: 'lunch', name: 'Lunch (30g protein)', category: 'nutrition', target: 'daily' },
+                { id: 'dinner', name: 'Dinner (30g protein)', category: 'nutrition', target: 'daily' },
+                { id: 'snack', name: 'Snack (25g protein)', category: 'nutrition', target: 'daily' },
+                { id: 'no_food_730', name: 'No food after 7:30pm', category: 'nutrition', target: 'daily' },
+                { id: 'exercise', name: 'Hour Exercise/9,000 steps', category: 'fitness', target: 'daily' },
+                { id: 'yoga', name: 'Yoga', category: 'fitness', target: '2x/week' },
+                { id: 'strength', name: 'Strength Training', category: 'fitness', target: '2x/week' },
+                { id: 'meditation', name: 'Meditation', category: 'wellness', target: 'daily' },
+                { id: 'spiritual', name: 'Spiritual time', category: 'wellness', target: 'daily' },
+                { id: 'bed_1030', name: 'Bed by 10:30pm', category: 'wellness', target: 'daily' },
+                { id: 'water', name: 'Water 120 oz', category: 'nutrition', target: 'daily' }
+            ];
+
+            const [completedHabits, setCompletedHabits] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('habitTrackerData');
+                    return saved ? JSON.parse(saved) : {};
+                } catch (error) {
+                    console.warn('Failed to load saved data:', error);
+                    return {};
+                }
+            });
+            
+            const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+            const [currentView, setCurrentView] = useState('today');
+
+            // Save to localStorage whenever completedHabits changes
+            useEffect(() => {
+                try {
+                    localStorage.setItem('habitTrackerData', JSON.stringify(completedHabits));
+                } catch (error) {
+                    console.warn('Failed to save data:', error);
+                }
+            }, [completedHabits]);
+
+            const toggleHabit = (habitId, date) => {
+                const key = `${habitId}_${date}`;
+                setCompletedHabits(prev => ({
+                    ...prev,
+                    [key]: !prev[key]
+                }));
+            };
+
+            const isHabitCompleted = (habitId, date) => {
+                const key = `${habitId}_${date}`;
+                return completedHabits[key] || false;
+            };
+
+            const getCompletedCount = (date) => {
+                return habits.filter(habit => isHabitCompleted(habit.id, date)).length;
+            };
+
+            const getCompletionPercentage = (date) => {
+                return Math.round((getCompletedCount(date) / habits.length) * 100);
+            };
+
+            const getCategoryColor = (category) => {
+                const colors = {
+                    nutrition: 'bg-green-100 border-green-300',
+                    fitness: 'bg-blue-100 border-blue-300',
+                    wellness: 'bg-purple-100 border-purple-300'
+                };
+                return colors[category] || 'bg-gray-100 border-gray-300';
+            };
+
+            const getCategoryIcon = (category) => {
+                const icons = {
+                    nutrition: '🥗',
+                    fitness: '💪',
+                    wellness: '🧘'
+                };
+                return icons[category] || '📝';
+            };
+
+            // Get last N days
+            const getLastNDays = (n) => {
+                const days = [];
+                for (let i = n - 1; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    days.push(date.toISOString().split('T')[0]);
+                }
+                return days;
+            };
+
+            const formatDate = (dateStr) => {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+            };
+
+            // Analytics functions
+            const getHabitSuccessRate = (habitId, days = 30) => {
+                const lastNDays = getLastNDays(days);
+                const completed = lastNDays.filter(date => isHabitCompleted(habitId, date)).length;
+                return Math.round((completed / lastNDays.length) * 100);
+            };
+
+            const getHabitAnalytics = (days = 30) => {
+                return habits.map(habit => ({
+                    ...habit,
+                    successRate: getHabitSuccessRate(habit.id, days),
+                    totalDays: days,
+                    completedDays: getLastNDays(days).filter(date => isHabitCompleted(habit.id, date)).length
+                })).sort((a, b) => a.successRate - b.successRate);
+            };
+
+            const getStreakInfo = (habitId) => {
+                let currentStreak = 0;
+                let longestStreak = 0;
+                let tempStreak = 0;
+                
+                const last100Days = getLastNDays(100);
+                
+                // Current streak (from today backwards)
+                for (let i = 0; i < last100Days.length; i++) {
+                    if (isHabitCompleted(habitId, last100Days[last100Days.length - 1 - i])) {
+                        currentStreak++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Longest streak
+                for (const date of last100Days) {
+                    if (isHabitCompleted(habitId, date)) {
+                        tempStreak++;
+                        longestStreak = Math.max(longestStreak, tempStreak);
+                    } else {
+                        tempStreak = 0;
+                    }
+                }
+                
+                return { currentStreak, longestStreak };
+            };
+
+            const weekDays = getLastNDays(7);
+            const analytics = getHabitAnalytics(30);
+
+            const renderTodayView = () => (
+                <div className="space-y-6">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {habits.map((habit) => {
+                            const { currentStreak } = getStreakInfo(habit.id);
+                            return (
+                                <div
+                                    key={habit.id}
+                                    className={`p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer hover:shadow-md ${
+                                        isHabitCompleted(habit.id, selectedDate)
+                                            ? 'bg-green-50 border-green-400'
+                                            : getCategoryColor(habit.category)
+                                    }`}
+                                    onClick={() => toggleHabit(habit.id, selectedDate)}
+                                >
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xl">{getCategoryIcon(habit.category)}</span>
+                                            <span className="font-medium text-gray-800">{habit.name}</span>
+                                        </div>
+                                        <div
+                                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                                                isHabitCompleted(habit.id, selectedDate)
+                                                    ? 'bg-green-500 border-green-500'
+                                                    : 'border-gray-300 hover:border-gray-400'
+                                            }`}
+                                        >
+                                            {isHabitCompleted(habit.id, selectedDate) && (
+                                                <Check className="text-white" size={16} />
+                                            )}
+                                        </div>
+                                    </div>
+                                    {currentStreak > 0 && (
+                                        <div className="text-xs text-orange-600 font-medium">
+                                            🔥 {currentStreak} day streak
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+
+            const renderAnalyticsView = () => (
+                <div className="space-y-6">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <AlertCircle className="text-yellow-600" size={20} />
+                            <h3 className="font-medium text-yellow-800">Habits Needing Attention</h3>
+                        </div>
+                        <p className="text-sm text-yellow-700">
+                            Focus on the habits with lower success rates to improve your overall consistency.
+                        </p>
+                    </div>
+
+                    <div className="grid gap-4">
+                        {analytics.map((habit, index) => {
+                            const { currentStreak, longestStreak } = getStreakInfo(habit.id);
+                            const isStrugglingWith = habit.successRate < 70;
+                            
+                            return (
+                                <div
+                                    key={habit.id}
+                                    className={`p-4 rounded-lg border ${
+                                        isStrugglingWith 
+                                            ? 'border-red-300 bg-red-50' 
+                                            : habit.successRate > 90 
+                                                ? 'border-green-300 bg-green-50'
+                                                : 'border-gray-300 bg-white'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-lg">{getCategoryIcon(habit.category)}</span>
+                                            <div>
+                                                <h3 className="font-medium text-gray-800">{habit.name}</h3>
+                                                <p className="text-xs text-gray-600 capitalize">{habit.target} • {habit.category}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className={`text-2xl font-bold ${
+                                                habit.successRate < 50 ? 'text-red-600' :
+                                                habit.successRate < 70 ? 'text-yellow-600' :
+                                                habit.successRate < 90 ? 'text-blue-600' : 'text-green-600'
+                                            }`}>
+                                                {habit.successRate}%
+                                            </div>
+                                            <div className="text-xs text-gray-600">
+                                                {habit.completedDays}/{habit.totalDays} days
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-3 gap-4 text-sm">
+                                        <div>
+                                            <div className="text-gray-600">Current Streak</div>
+                                            <div className="font-medium">{currentStreak} days</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-gray-600">Best Streak</div>
+                                            <div className="font-medium">{longestStreak} days</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-gray-600">Priority</div>
+                                            <div className="font-medium">
+                                                {index < 3 ? '🔴 High' : index < 6 ? '🟡 Medium' : '🟢 Low'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {isStrugglingWith && (
+                                        <div className="mt-3 p-2 bg-red-100 rounded text-sm text-red-800">
+                                            💡 Consider: What's making this habit challenging? Could you break it into smaller steps?
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+
+            const renderWeeklyView = () => (
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr>
+                                <th className="text-left p-3 font-medium text-gray-600">Habit</th>
+                                {weekDays.map((date) => (
+                                    <th key={date} className="text-center p-3 font-medium text-gray-600 min-w-20">
+                                        {formatDate(date)}
+                                    </th>
+                                ))}
+                                <th className="text-center p-3 font-medium text-gray-600">Success</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {habits.map((habit) => {
+                                const weekSuccess = Math.round((weekDays.filter(date => isHabitCompleted(habit.id, date)).length / 7) * 100);
+                                return (
+                                    <tr key={habit.id} className="border-t">
+                                        <td className="p-3">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm">{getCategoryIcon(habit.category)}</span>
+                                                <span className="text-sm font-medium">{habit.name}</span>
+                                            </div>
+                                        </td>
+                                        {weekDays.map((date) => (
+                                            <td key={date} className="p-3 text-center">
+                                                <div
+                                                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all duration-200 mx-auto ${
+                                                        isHabitCompleted(habit.id, date)
+                                                            ? 'bg-green-500 border-green-500'
+                                                            : 'border-gray-300 hover:border-gray-400'
+                                                    }`}
+                                                    onClick={() => toggleHabit(habit.id, date)}
+                                                >
+                                                    {isHabitCompleted(habit.id, date) && (
+                                                        <Check className="text-white" size={16} />
+                                                    )}
+                                                </div>
+                                            </td>
+                                        ))}
+                                        <td className="p-3 text-center">
+                                            <span className={`font-medium ${
+                                                weekSuccess >= 85 ? 'text-green-600' :
+                                                weekSuccess >= 60 ? 'text-yellow-600' : 'text-red-600'
+                                            }`}>
+                                                {weekSuccess}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            );
+
+            return (
+                <div className="max-w-6xl mx-auto p-4 bg-gray-50 min-h-screen">
+                    <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <Target className="text-blue-600" size={32} />
+                                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Habit Tracker</h1>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-sm text-gray-600">Today's Progress</div>
+                                <div className="text-2xl font-bold text-blue-600">
+                                    {getCompletedCount(selectedDate)}/{habits.length}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                    {getCompletionPercentage(selectedDate)}% Complete
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Navigation */}
+                        <div className="flex flex-wrap gap-2 mb-6">
+                            <button
+                                onClick={() => setCurrentView('today')}
+                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                    currentView === 'today' 
+                                        ? 'bg-blue-500 text-white' 
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                📅 Today
+                            </button>
+                            <button
+                                onClick={() => setCurrentView('weekly')}
+                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                    currentView === 'weekly' 
+                                        ? 'bg-blue-500 text-white' 
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                📊 Weekly
+                            </button>
+                            <button
+                                onClick={() => setCurrentView('analytics')}
+                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                    currentView === 'analytics' 
+                                        ? 'bg-blue-500 text-white' 
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                📈 Analytics
+                            </button>
+                        </div>
+
+                        {/* Date Picker - only show on today view */}
+                        {currentView === 'today' && (
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Select Date
+                                </label>
+                                <input
+                                    type="date"
+                                    value={selectedDate}
+                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        )}
+
+                        {/* Content */}
+                        {currentView === 'today' && renderTodayView()}
+                        {currentView === 'weekly' && renderWeeklyView()}
+                        {currentView === 'analytics' && renderAnalyticsView()}
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the app
+        ReactDOM.render(<HabitTracker />, document.getElementById('root'));
+    </script>
+
+    <!-- Service Worker for PWA functionality -->
+    <script>
+        // Register service worker for PWA features
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('data:application/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdpbnN0YWxsJywgZnVuY3Rpb24oZXZlbnQpIHsKICBjb25zb2xlLmxvZygnU2VydmljZSBXb3JrZXIgaW5zdGFsbGVkJyk7Cn0pOwoKc2VsZi5hZGRFdmVudExpc3RlbmVyKCdhY3RpdmF0ZScsIGZ1bmN0aW9uKGV2ZW50KSB7CiAgY29uc29sZS5sb2coJ1NlcnZpY2UgV29ya2VyIGFjdGl2YXRlZCcpOwp9KTs=')
+                .then(function(registration) {
+                    console.log('ServiceWorker registration successful');
+                })
+                .catch(function(err) {
+                    console.log('ServiceWorker registration failed');
+                });
+            });
+        }
+    </script>
+</body>
+</html>
